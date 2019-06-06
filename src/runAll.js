@@ -78,12 +78,14 @@ module.exports = async function runAll(config) {
   // Do not terminate main Listr process on SIGINT
   process.on('SIGINT', () => {})
 
+  const cwd = process.cwd()
+
   return new Listr(
     [
       {
         title: 'Stashing changes...',
         skip: async () => {
-          const hasPSF = await git.hasPartiallyStagedFiles({ cwd: gitDir })
+          const hasPSF = await git.hasPartiallyStagedFiles({ cwd })
           if (!hasPSF) {
             return 'No partially staged files found...'
           }
@@ -91,7 +93,7 @@ module.exports = async function runAll(config) {
         },
         task: ctx => {
           ctx.hasStash = true
-          return git.gitStashSave({ cwd: gitDir })
+          return git.gitStashSave({ cwd })
         }
       },
       {
@@ -107,12 +109,12 @@ module.exports = async function runAll(config) {
         title: 'Updating stash...',
         enabled: ctx => ctx.hasStash,
         skip: ctx => ctx.hasErrors && 'Skipping stash update since some tasks exited with errors',
-        task: () => git.updateStash({ cwd: gitDir })
+        task: () => git.updateStash({ cwd })
       },
       {
         title: 'Restoring local changes...',
         enabled: ctx => ctx.hasStash,
-        task: () => git.gitStashPop({ cwd: gitDir })
+        task: () => git.gitStashPop({ cwd })
       }
     ],
     listrBaseOptions
